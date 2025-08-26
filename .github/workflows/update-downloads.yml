@@ -1,0 +1,29 @@
+name: Update Downloads
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Update README with latest release
+        run: |
+          # Get latest release info
+          LATEST=$(curl -s "https://api.github.com/repos/${{ github.repository }}/releases/latest")
+          VERSION=$(echo "$LATEST" | jq -r '.tag_name')
+          
+          # Update README with latest version info
+          sed -i "s/Brand Tone Corrector v[0-9.]\+/Brand Tone Corrector $VERSION/g" README.md
+          
+          # Commit if changes
+          if ! git diff --quiet README.md; then
+            git config user.name "GitHub Actions"
+            git config user.email "actions@github.com"
+            git add README.md
+            git commit -m "Update README for release $VERSION"
+            git push
+          fi
