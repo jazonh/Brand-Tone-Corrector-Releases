@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # One-command installer for Brand Tone Corrector
-# Usage: curl -s https://raw.githubusercontent.com/jazonh/Brand-Tone-Corrector-Releases-Releases/main/install.sh | bash
+# Usage: curl -s https://raw.githubusercontent.com/jazonh/Brand-Tone-Corrector-Releases/main/install.sh | bash
 
 set -e
 
-REPO="jazonh/Brand-Tone-Corrector-Releases-Releases"
+REPO="jazonh/Brand-Tone-Corrector-Releases"
 APP_NAME="Brand Tone Corrector"
 INSTALL_DIR="/Applications"
 
