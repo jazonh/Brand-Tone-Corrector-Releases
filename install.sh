@@ -1,89 +1,134 @@
 #!/bin/bash
 
-# One-command installer for Brand Tone Corrector
-# Usage: curl -s https://raw.githubusercontent.com/jazonh/Brand-Tone-Corrector-Releases/main/install.sh | bash
+# Smart Install Script for Brand Tone Corrector
+# Based on the proven Design Review Helper installation system
+# Handles quarantine removal and provides seamless installation experience
 
 set -e
 
-REPO="jazonh/Brand-Tone-Corrector-Releases"
-APP_NAME="Brand Tone Corrector"
-INSTALL_DIR="/Applications"
-
-echo "🚀 Installing Brand Tone Corrector..."
+echo "🚀 Brand Tone Corrector - Smart Installer"
+echo "=========================================="
 echo ""
 
-# Get latest release info
-echo "📡 Checking for latest version..."
-LATEST_RELEASE=$(curl -s "https://api.github.com/repos/$REPO/releases/latest")
-DOWNLOAD_URL=$(echo "$LATEST_RELEASE" | grep -o '"browser_download_url": "[^"]*\.zip"' | cut -d '"' -f 4)
-VERSION=$(echo "$LATEST_RELEASE" | grep -o '"tag_name": "[^"]*"' | cut -d '"' -f 4)
+# Configuration
+REPO="jazonh/Brand-Tone-Corrector-Releases"
+APP_NAME="Brand Tone Corrector"
+TEMP_DIR="/tmp/brand-tone-corrector-install"
 
-if [ -z "$DOWNLOAD_URL" ]; then
-    echo "❌ Could not find download URL. Please check manually at:"
-    echo "   https://github.com/$REPO/releases/latest"
+# Check if running on macOS
+if [[ "$(uname)" != "Darwin" ]]; then
+    echo "❌ This installer is for macOS only."
     exit 1
 fi
 
-echo "✅ Found version: $VERSION"
+# Check for required tools
+if ! command -v curl &> /dev/null; then
+    echo "❌ curl is required but not installed."
+    exit 1
+fi
+
+if ! command -v unzip &> /dev/null; then
+    echo "❌ unzip is required but not installed."
+    exit 1
+fi
+
+echo "📋 Installing Brand Tone Corrector..."
 echo ""
 
 # Create temporary directory
-TEMP_DIR=$(mktemp -d)
+echo "📁 Creating temporary directory..."
+rm -rf "$TEMP_DIR"
+mkdir -p "$TEMP_DIR"
 cd "$TEMP_DIR"
 
-# Download the app
-echo "📥 Downloading $APP_NAME..."
-curl -L -o "app.zip" "$DOWNLOAD_URL"
+# Get latest release information
+echo "🔍 Finding latest version..."
+LATEST_URL="https://api.github.com/repos/$REPO/releases/latest"
+DOWNLOAD_URL=$(curl -s "$LATEST_URL" | grep -o 'https://github.com/[^"]*\.zip' | head -1)
 
-if [ ! -f "app.zip" ]; then
-    echo "❌ Download failed"
+if [ -z "$DOWNLOAD_URL" ]; then
+    echo "❌ Could not find latest release. Please check your internet connection."
+    exit 1
+fi
+
+VERSION=$(echo "$DOWNLOAD_URL" | grep -o 'v[0-9]\+\.[0-9]\+\.[0-9]\+' | head -1)
+echo "✅ Found latest version: $VERSION"
+
+# Download latest version
+echo "📥 Downloading $VERSION..."
+ZIP_FILE="brand-tone-corrector-latest.zip"
+curl -L -o "$ZIP_FILE" "$DOWNLOAD_URL"
+
+if [ ! -f "$ZIP_FILE" ]; then
+    echo "❌ Download failed."
     exit 1
 fi
 
 echo "✅ Download complete"
-echo ""
 
-# Unzip
+# Extract the app
 echo "📦 Extracting application..."
-unzip -q "app.zip"
+unzip -q "$ZIP_FILE"
 
-# Find the .app bundle
-APP_BUNDLE=$(find . -name "*.app" -type d | head -1)
-
-if [ -z "$APP_BUNDLE" ]; then
-    echo "❌ Could not find application bundle in download"
+if [ ! -d "$APP_NAME.app" ]; then
+    echo "❌ Application not found in downloaded package."
     exit 1
 fi
 
-# Remove existing installation if it exists
-if [ -d "$INSTALL_DIR/$APP_NAME.app" ]; then
-    echo "🗑️  Removing existing installation..."
-    rm -rf "$INSTALL_DIR/$APP_NAME.app"
+# Remove quarantine attributes (critical for seamless updates)
+echo "🔓 Removing quarantine attributes..."
+xattr -dr com.apple.quarantine "$APP_NAME.app" 2>/dev/null || true
+
+# Remove existing installation if present
+if [ -d "/Applications/$APP_NAME.app" ]; then
+    echo "🗑️  Removing previous installation..."
+    rm -rf "/Applications/$APP_NAME.app"
 fi
 
 # Install to Applications
-echo "📱 Installing to Applications folder..."
-sudo cp -R "$APP_BUNDLE" "$INSTALL_DIR/"
+echo "📋 Installing to Applications folder..."
+mv "$APP_NAME.app" "/Applications/"
 
-# Remove quarantine attribute to bypass Gatekeeper
-echo "🔓 Configuring permissions..."
-sudo xattr -r -d com.apple.quarantine "$INSTALL_DIR/$APP_NAME.app" 2>/dev/null || true
+if [ ! -d "/Applications/$APP_NAME.app" ]; then
+    echo "❌ Installation failed."
+    exit 1
+fi
 
-# Clean up
+# Cleanup
+echo "🧹 Cleaning up temporary files..."
 cd /
 rm -rf "$TEMP_DIR"
 
 echo ""
-echo "🎉 Installation complete!"
+echo "🎉 Installation Complete!"
+echo "========================"
 echo ""
-echo "✅ $APP_NAME has been installed to Applications"
-echo "✅ Gatekeeper permissions configured"
-echo "✅ App is ready to use"
+echo "✅ Brand Tone Corrector $VERSION has been installed successfully!"
 echo ""
-echo "🚀 Launch the app:"
-echo "   • Open Applications folder"
-echo "   • Double-click '$APP_NAME'"
-echo "   • Or press Cmd+Space and type 'Brand Tone'"
+echo "📱 **Next Steps:**"
+echo "   1. Open Brand Tone Corrector from Applications folder"
+echo "   2. Configure your OpenAI API key in Settings"
+echo "   3. Start correcting tone with AI-powered suggestions!"
 echo ""
-echo "📖 Need help? Check the documentation:"
-echo "   https://github.com/$REPO/blob/main/README.md"
+echo "🔄 **Automatic Updates:**"
+echo "   The app will automatically check for updates and notify you when new versions are available."
+echo "   Future updates will install seamlessly without additional setup."
+echo ""
+echo "🚀 **Opening Brand Tone Corrector now...**"
+
+# Open the application
+open "/Applications/$APP_NAME.app"
+
+echo ""
+echo "Thank you for using Brand Tone Corrector! 🎊"
+echo ""
+echo "💡 **Tips:**"
+echo "   • The app includes built-in brand guidelines for TCGplayer"
+echo "   • Try the sample texts to see how tone correction works"
+echo "   • Check Settings → Updates for manual update checks"
+echo ""
+echo "🔗 **Resources:**"
+echo "   • GitHub: https://github.com/jazonh/Brand-Tone-Corrector"
+echo "   • Releases: https://github.com/$REPO"
+echo ""
+echo "✨ Installation complete - enjoy your enhanced brand communication!"
